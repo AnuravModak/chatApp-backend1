@@ -20,31 +20,22 @@ import java.util.UUID;
 @Service
 public class MessageService {
 
-    @Autowired
     private MessageRepository messageRepository;
+    private SimpMessagingTemplate messagingTemplate;  // Spring's template to send WebSocket messages
 
 
+    @Autowired
+    public MessageService(MessageRepository messageRepository, SimpMessagingTemplate messagingTemplate) {
+        this.messageRepository = messageRepository;
+        this.messagingTemplate = messagingTemplate;
+    }
 //    @Autowired
 //    private RedisTemplate<String, Object> redisTemplate;  // RedisTemplate for publishing messages
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;  // Spring's template to send WebSocket messages
 
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
 
     public List<Messages> getMessages(UUID userId) {
         return messageRepository.findBySenderOrReceiver(userId, userId);
-    }
-
-    public void markMessageAsRead(UUID messageId){
-        Optional<Messages> messagesOptional=messageRepository.findById(messageId);
-        if (messagesOptional.isPresent()){
-            Messages message= messagesOptional.get();
-            message.setRead(true);
-            messageRepository.save(message);
-            messagingTemplate.convertAndSendToUser(message.getSender().toString(),"/queue/read-receipts",messageId);
-        }
     }
 
     public Messages save(Messages message) {
@@ -66,10 +57,6 @@ public class MessageService {
                 );
 
         return savedMessage;
-    }
-    // Method to handle JWT validation for WebSocket connections
-    public boolean validateJwt(String token) {
-        return jwtTokenUtil.validateToken(token);  // Use your JWT utility to validate the token
     }
 
     public List<Messages> getChats( UUID senderId, UUID receiverId){

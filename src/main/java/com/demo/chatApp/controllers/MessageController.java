@@ -1,6 +1,9 @@
 package com.demo.chatApp.controllers;
 
+import com.demo.chatApp.entities.MessageDTO;
+import com.demo.chatApp.entities.MessageStatus;
 import com.demo.chatApp.entities.Messages;
+import com.demo.chatApp.repos.MessageRepository;
 import com.demo.chatApp.services.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,11 +12,9 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,19 +25,47 @@ public class MessageController {
     private SimpMessagingTemplate messagingTemplate;
 
     private final MessageService messageService;
+    private final MessageRepository messageRepository;
 
     @Autowired
-    public MessageController(MessageService messageService){
+    public MessageController(MessageService messageService, MessageRepository messageRepository){
+
         this.messageService=messageService;
+        this.messageRepository= messageRepository;
     }
 
+    @PostMapping("/api/chat/send")
+    public ResponseEntity<?> sendMessage(@RequestBody MessageDTO messageDTO) {
+        try {
+            UUID messageId = UUID.randomUUID();
 
+            System.out.println("Sender: " + messageDTO.getSender() + " | Receiver: " + messageDTO.getReceiver());
 
-    @PostMapping("/read-receipt")
-    public ResponseEntity<String> markMessageAsRead(@RequestParam String messageId) {
-        UUID uuidMessageId = UUID.fromString(messageId);
-        messageService.markMessageAsRead(uuidMessageId);
-        return ResponseEntity.ok("Message marked as read");
+            messageRepository.insertMessage(
+                    messageId,
+                    messageDTO.getSender(),
+                    messageDTO.getReceiver(),
+                    messageDTO.getContent(),
+                    LocalDateTime.now(),
+                    false,
+                    MessageStatus.SENT.toString()
+
+            );
+
+            // Send message via WebSocket
+            messagingTemplate.convertAndSendToUser(
+                    messageDTO.getReceiver().toString(),
+                    "/queue/messages",
+                    messageDTO
+            );
+
+            return ResponseEntity.ok("Message sent successfully with ID: " + messageId);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error sending message: " + e.getMessage());
+        }
     }
 
     @GetMapping("/admin/getMessages/{senderId}/{receiverId}")
