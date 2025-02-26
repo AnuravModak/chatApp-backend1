@@ -125,23 +125,6 @@ public class UserService {
 
     }
 
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Fetch the user from the database by username
-        Optional<User> user = userRepository.findByUsername(username);
-
-        if (user == null) {
-            if (user == null) {
-                throw new InvalidCredentialsException("User not found with username: " + username);
-            }
-        }
-
-        // Create UserDetails object to return (Spring Security will use it for authentication)
-        org.springframework.security.core.userdetails.User.UserBuilder builder = org.springframework.security.core.userdetails.User.withUsername(user.get().getUsername());
-        builder.password(user.get().getPassword());  // Set password
-
-        return builder.build();
-    }
-
     @Transactional
     public void logoutUser(String username) {
         try {

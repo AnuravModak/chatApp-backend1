@@ -32,6 +32,21 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(user);
     }
 
+    @GetMapping("admin/username/{userName}")
+    public ResponseEntity<?> getUserByUsername(@PathVariable String userName) {
+        try {
+            Optional<User> user = userService.findByUsername(userName);
+            if (user.isPresent()) {
+                return ResponseEntity.status(HttpStatus.OK).body(user);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while fetching the user: " + e.getMessage());
+        }
+    }
+
 
     @PostMapping("/register")
     public ResponseEntity<User> register(@RequestBody User user){
