@@ -12,7 +12,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue");  // Enables private messaging
+        registry.enableSimpleBroker("/topic", "/queue");  // Enables topic-based and private messaging
         registry.setUserDestinationPrefix("/user");  // Routes private messages correctly
         registry.setApplicationDestinationPrefixes("/app");
     }
@@ -20,7 +20,7 @@ public class WebsocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/chat")
-                .setAllowedOrigins("http://192.168.0.170:5173")
+                .setAllowedOrigins("http://192.168.0.170:5173") // Removed trailing slash
                 .withSockJS();
     }
 }

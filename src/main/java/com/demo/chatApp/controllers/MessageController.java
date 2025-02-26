@@ -28,44 +28,53 @@ public class MessageController {
     private final MessageRepository messageRepository;
 
     @Autowired
-    public MessageController(MessageService messageService, MessageRepository messageRepository){
-
-        this.messageService=messageService;
-        this.messageRepository= messageRepository;
+    public MessageController(MessageService messageService, MessageRepository messageRepository) {
+        this.messageService = messageService;
+        this.messageRepository = messageRepository;
     }
 
+
+    // ✅ Keep WebSocket for real-time messaging
+    @MessageMapping("/chat.privateMessage")
+    @SendTo("/user/queue/messages")
+    public void privateMessage(MessageDTO message) {
+        UUID messageId = UUID.randomUUID();
+        LocalDateTime timestamp = LocalDateTime.now();
+
+        System.out.println("Sender: " + message.getSender() + " | Receiver: " + message.getReceiver());
+        System.out.println("Sending the message out...");
+
+        // Send message to the specific user via WebSockets
+        messagingTemplate.convertAndSendToUser(
+                message.getReceiver().toString(),
+                "/queue/messages",
+                message
+        );
+
+        System.out.println("sent out message already!!");
+    }
+
+
+    // ✅ Add back HTTP POST for saving messages
     @PostMapping("/api/chat/send")
-    public ResponseEntity<?> sendMessage(@RequestBody MessageDTO messageDTO) {
-        try {
-            UUID messageId = UUID.randomUUID();
+    public ResponseEntity<String> saveMessage(@RequestBody MessageDTO message) {
+        UUID messageId = UUID.randomUUID();
+        LocalDateTime timestamp = LocalDateTime.now();
 
-            System.out.println("Sender: " + messageDTO.getSender() + " | Receiver: " + messageDTO.getReceiver());
+        System.out.println("Saving message from: " + message.getSender() + " to " + message.getReceiver());
 
-            messageRepository.insertMessage(
-                    messageId,
-                    messageDTO.getSender(),
-                    messageDTO.getReceiver(),
-                    messageDTO.getContent(),
-                    LocalDateTime.now(),
-                    false,
-                    MessageStatus.SENT.toString()
+        // Save message to DB
+        messageRepository.insertMessage(
+                messageId,
+                message.getSender(),
+                message.getReceiver(),
+                message.getContent(),
+                timestamp,
+                false,
+                MessageStatus.SENT.toString()
+        );
 
-            );
-
-            // Send message via WebSocket
-            messagingTemplate.convertAndSendToUser(
-                    messageDTO.getReceiver().toString(),
-                    "/queue/messages",
-                    messageDTO
-            );
-
-            return ResponseEntity.ok("Message sent successfully with ID: " + messageId);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error sending message: " + e.getMessage());
-        }
+        return ResponseEntity.ok("Message saved successfully!");
     }
 
     @GetMapping("/admin/getMessages/{senderId}/{receiverId}")

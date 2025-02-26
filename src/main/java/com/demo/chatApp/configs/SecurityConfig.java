@@ -1,6 +1,5 @@
 package com.demo.chatApp.configs;
 
-
 import com.demo.chatApp.filters.JwtAuthenticationFilter;
 import com.demo.chatApp.services.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +28,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        http.cors() // Enabled CORS
+                .and()
+                .csrf(csrf -> csrf.disable()) // Disabled CSRF
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers( "/**").permitAll()
+                        .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenUtil), UsernamePasswordAuthenticationFilter.class);

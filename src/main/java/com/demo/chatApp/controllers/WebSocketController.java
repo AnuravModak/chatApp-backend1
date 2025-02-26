@@ -79,13 +79,6 @@ public class WebSocketController {
                 return onlineUsers;
             }
 
-//            // ✅ Step 3: Validate JWT token
-//            boolean isTokenValid = jwtTokenUtil.validateToken(jwtToken);
-//            if (!isTokenValid) {
-//                System.out.println("❌ Invalid or expired JWT detected. Removing from DB and marking user offline.");
-//                jwtTokenRepository.deleteToken(jwtToken);
-//                return onlineUsers;
-//            }
 
             // ✅ Step 4: Mark user as online
             onlineUsers.add(username);
